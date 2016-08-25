@@ -221,6 +221,7 @@ void LocalOpenDataTreeProducer::Loop()
     
     assert(fChain_ak4 && "AK4 tree invalid!" );
     assert(fChain_ak7 && "AK7 tree invalid!" );
+
     fChain_ak4->SetBranchStatus("*",0);  // disable all branches
     fChain_ak7->SetBranchStatus("*",0);
 
@@ -230,29 +231,43 @@ void LocalOpenDataTreeProducer::Loop()
     fChain_ak7->SetBranchStatus("EvtHdr_.mLumi",1); // lumi
     fChain_ak7->SetBranchStatus("EvtHdr_.mEvent",1); // event
 
+
+    // Enable all AK7 branches (segfault otherwise ??)
+    fChain_ak7->SetBranchStatus("PFJets_", 1);
+    fChain_ak7->SetBranchStatus("PFJets_.P4_.fCoordinates.f*", 1);
+    fChain_ak7->SetBranchStatus("PFJets_.cor_", 1);
+    fChain_ak7->SetBranchStatus("PFJets_.area_", 1);
+
+
     std::cout << "Mapping AK7 events to AK4 events for data" << std::endl;
     map<Int_t, map<Int_t, map<UInt_t, Long64_t> > > ak7entry;
 
     Long64_t nentries7 = fChain_ak7->GetEntries();
     for (Long64_t jentry7 = 0; jentry7 < nentries7; jentry7++) {
+
+        // Read event
         fChain_ak7->GetEntry(jentry7);
 
         // Check for duplicates
-        assert(ak7entry[EvtHdr__mRun_ak7][EvtHdr__mLumi_ak7][EvtHdr__mEvent_ak7] == 0);
+        assert(ak7entry[EvtHdr__mRun_ak7][EvtHdr__mLumi_ak7][EvtHdr__mEvent_ak7] == 0 &&
+                "Duplicate event found!");
+
+        // Save event index
         ak7entry[EvtHdr__mRun_ak7][EvtHdr__mLumi_ak7][EvtHdr__mEvent_ak7] = jentry7;
-    } 
+    }
+
     std::cout << "Found mapping for " << ak7entry.size() << " runs" << std::endl;
 
 
-    // Enable the remaining variables
-
+    // Enable the remaining AK4 variables
     fChain_ak4->SetBranchStatus("PFJets_",1); // njet
     fChain_ak4->SetBranchStatus("PFJets_.P4_.fCoordinates.f*",1); // Four-momentum
     
     fChain_ak4->SetBranchStatus("PFJets_.tightID_",1); // jet_tightID
     fChain_ak4->SetBranchStatus("PFJets_.area_",1); // jet_area
     fChain_ak4->SetBranchStatus("PFJets_.cor_",1); // jet_jes
-    
+
+
     // Composition values
     fChain_ak4->SetBranchStatus("PFJets_.chf_",1);
     fChain_ak4->SetBranchStatus("PFJets_.nhf_",1);
@@ -269,19 +284,24 @@ void LocalOpenDataTreeProducer::Loop()
     fChain_ak4->SetBranchStatus("PFJets_.beta_",1);
     fChain_ak4->SetBranchStatus("PFJets_.betaStar_",1);
     fChain_ak4->SetBranchStatus("PFJets_.hof_",1);
-
-    fChain_ak4->SetBranchStatus("PFJets_.CSV_", 1);
     fChain_ak4->SetBranchStatus("PFJets_.partonFlavour_", 1);
     fChain_ak4->SetBranchStatus("PFJets_.hadronFlavour_", 1);
+
+
+    fChain_ak4->SetBranchStatus("PFJets_.CSV_", 1);
     
     if (isMC) { // MC
         fChain_ak4->SetBranchStatus("GenJets_",1); // ngen
         fChain_ak4->SetBranchStatus("GenJets_.fCoordinates.f*",1);
+        fChain_ak4->SetBranchStatus("EvtHdr_.mPthat",1); // pthat
+        fChain_ak4->SetBranchStatus("EvtHdr_.mWeight",1); // mcweight
     }
-    
+
+
     fChain_ak4->SetBranchStatus("TriggerDecision_",1);
     fChain_ak4->SetBranchStatus("L1Prescale_",1);
     fChain_ak4->SetBranchStatus("HLTPrescale_",1);
+
 
     fChain_ak4->SetBranchStatus("EvtHdr_.mRun",1); // run
     fChain_ak4->SetBranchStatus("EvtHdr_.mLumi",1); // lumi
@@ -289,14 +309,6 @@ void LocalOpenDataTreeProducer::Loop()
     fChain_ak4->SetBranchStatus("PFMet_.et_",1); // met
     fChain_ak4->SetBranchStatus("PFMet_.sumEt_",1); // sumet
     fChain_ak4->SetBranchStatus("EvtHdr_.mPFRho",1); // rho
-    fChain_ak4->SetBranchStatus("EvtHdr_.mPthat",1); // pthat
-    fChain_ak4->SetBranchStatus("EvtHdr_.mWeight",1); // mcweight
-
-
-    fChain_ak7->SetBranchStatus("PFJets_", 1);
-    fChain_ak7->SetBranchStatus("PFJets_.P4_.fCoordinates.f*", 1);
-    fChain_ak7->SetBranchStatus("PFJets_.cor_", 1);
-    fChain_ak7->SetBranchStatus("PFJets_.area_", 1);
 
     // Helper variables
     TLorentzVector p4, p4_ak4, p4_ak7, p4gen;
@@ -305,10 +317,11 @@ void LocalOpenDataTreeProducer::Loop()
     // Total number of events
     Long64_t nentries = fChain_ak4->GetEntries(); 
     std::cout << "Total entries: " << nentries << std::endl;
- 
-    // DEBUG!!
+
+
+    // DEBUG
     // Change number of events here
-    //nentries = 100000;
+    nentries = 100000;
 
     // Convert set into vector
     std::vector<std::string> trg_vec;
@@ -343,13 +356,10 @@ void LocalOpenDataTreeProducer::Loop()
         }
     }
 
-
     // Iterating over the events
     for (Long64_t jentry = 0; jentry != nentries; ++jentry) {
         
-        Long64_t ientry = LoadTree(jentry);
-        if (ientry < 0) break;
-
+        // Read event     
         fChain_ak4->GetEntry(jentry);
 
         // Number of leading jets for which composition variables are saved
@@ -360,6 +370,7 @@ void LocalOpenDataTreeProducer::Loop()
 
         for (Int_t i = 0; i != PFJets__; ++i) {
 
+            // Define 4-momentum
             p4.SetPxPyPzE(  PFJets__P4__fCoordinates_fX[i], PFJets__P4__fCoordinates_fY[i],
                             PFJets__P4__fCoordinates_fZ[i], PFJets__P4__fCoordinates_fT[i]);
 
@@ -409,10 +420,11 @@ void LocalOpenDataTreeProducer::Loop()
                 ++i_out;
             }
         }
-        njet = i_out; // Ugly hack
+        njet = i_out; // Ugly hack to get number of jets
 
         // Read corresponding AK7 event using the entry mapping
-        fChain_ak7->GetEntry(ak7entry[EvtHdr__mRun][EvtHdr__mLumi][EvtHdr__mEvent]);
+        Long64_t jentry7 = ak7entry[EvtHdr__mRun][EvtHdr__mLumi][EvtHdr__mEvent];
+        fChain_ak7->GetEntry(jentry7);
 
         // Safety check
         if (EvtHdr__mRun != EvtHdr__mRun_ak7 || 
@@ -429,6 +441,7 @@ void LocalOpenDataTreeProducer::Loop()
             p4_ak7.SetPxPyPzE(  PFJets__P4__fCoordinates_fX_ak7[i], PFJets__P4__fCoordinates_fY_ak7[i],
                                 PFJets__P4__fCoordinates_fZ_ak7[i], PFJets__P4__fCoordinates_fT_ak7[i]);
 
+
             // 4-momentum (corrected!)
             jet_pt_ak7[i]   = p4_ak7.Pt();   
             jet_eta_ak7[i]  = p4_ak7.Eta();
@@ -442,6 +455,7 @@ void LocalOpenDataTreeProducer::Loop()
             // Matching AK7 jet to AK4
             ak7_to_ak4[i] = -1;
 
+
             // Search AK4 jet with minimum distance to this PFjet   
             float rMin(999);
             for (Int_t ak4_i = 0; ak4_i != njet; ++ak4_i) {
@@ -449,7 +463,7 @@ void LocalOpenDataTreeProducer::Loop()
                 // Initialize AK4 jet
                 p4_ak4.SetPtEtaPhiE(  jet_pt[ak4_i],  jet_eta[ak4_i],
                                       jet_phi[ak4_i], jet_E[ak4_i]);  
-                
+            
                 // Distance between jets
                 double deltaR = p4_ak7.DeltaR(p4_ak4);
 
@@ -457,10 +471,13 @@ void LocalOpenDataTreeProducer::Loop()
                     rMin = deltaR;
                     ak7_to_ak4[i] = ak4_i;
                 }
+
             }
         }
 
         // MC jets
+
+
         if (isMC) {
             ngen = GenJets__;
             pthat = EvtHdr__mPthat;
@@ -476,8 +493,7 @@ void LocalOpenDataTreeProducer::Loop()
                 gen_E[i] = p4gen.E();
             }
         }
-        
-
+    
         // List of trigger names
         auto trg_list = TriggerNames->GetXaxis()->GetLabels();
         for (int itrg = 0; itrg != trg_list->GetSize(); ++itrg ) {
@@ -512,7 +528,10 @@ void LocalOpenDataTreeProducer::Loop()
         tree->Fill();
    }
 
+
    fout->cd();
    tree->Write();
    fout->Close();
+
+   std::cout << "Success!" << std::endl;
 }

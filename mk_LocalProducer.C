@@ -8,25 +8,27 @@
 
 	// Input tuples
 	const std::string treeName = "ProcessedTree";
-	const int numFiles = 3;
-
-	// Here are the input files!
-	const char *fileNames[numFiles] = { "root://eoscms.cern.ch//store/group/phys_smp/Multijet/13TeV/Data/2016/Ntuples-Data-2016-RunC-v2-part1.root",
-	                                   "root://eoscms.cern.ch//store/group/phys_smp/Multijet/13TeV/Data/2016/Ntuples-Data-2016-RunC-v2-part2.root",
-	                                   "root://eoscms.cern.ch//store/group/phys_smp/Multijet/13TeV/Data/2016/Ntuples-Data-2016-RunC-v2-part3.root",
-	                                };
 
 	// AK4 and AK7 trees
 	TChain *chain_ak4 = new TChain(("ak4/" + treeName).c_str());
 	TChain *chain_ak7 = new TChain(("ak7/" + treeName).c_str());
 
-	for (int i = 0; i < numFiles; ++i) {
-		chain_ak4->Add(fileNames[i]);
-		chain_ak7->Add(fileNames[i]);
+
+	// Here are the input files! (https://twiki.cern.ch/twiki/bin/viewauth/CMS/InclusiveJetsLegacy)
+	std::vector<std::string> fileNames  = 
+		{ 	//"root://eoscms.cern.ch//store/group/phys_smp/Multijet/13TeV/Data/2016/Ntuples-Data-2016-RunC-v2-part1.root",
+        	//"root://eoscms.cern.ch//store/group/phys_smp/Multijet/13TeV/Data/2016/Ntuples-Data-2016-RunC-v2-part2.root",
+        	//"root://eoscms.cern.ch//store/group/phys_smp/Multijet/13TeV/Data/2016/Ntuples-Data-2016-RunC-v2-part3.root",
+    		"tuples0.root"
+		};
+
+	for (std::string name : fileNames) {
+		chain_ak4->Add(name.c_str());
+		chain_ak7->Add(name.c_str());
 	}
 
-	// Retrieve trigger names
-	TFile *f = TFile::Open(fileNames[0]);
+	// Retrieve list of trigger names
+	TFile *f = TFile::Open(fileNames[0].c_str());
 	TDirectory *dir = (TDirectory*)f->Get("ak4");
 	TH1F* trgNames;
 	dir->GetObject("TriggerNames", trgNames);    
