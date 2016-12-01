@@ -2,3 +2,7 @@
 *.d
 *.so
 *ACLiC*
+LSF*
+2016
+CondFormats
+*.sh
