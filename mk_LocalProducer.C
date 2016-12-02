@@ -53,7 +53,8 @@
 	}
 	else if (isMC) { 
 		std::vector<std::string> names =
-			{ 					
+			{ 	
+				//"root://eoscms.cern.ch//store/group/phys_smp/Multijet/13TeV/MC/QCD_Pt-15to7000_TuneCUETHS1_Flat_13TeV_herwigpp_80X.root" ---> Corrupted, do not use!
 				"root://eoscms.cern.ch//store/group/phys_smp/Multijet/13TeV/MC/QCD_Pt-15to7000_TuneCUETHS1_Flat_13TeV_herwigpp_80X_v2.root"
             	//"root://eoscms.cern.ch//store/group/phys_smp/Multijet/13TeV/MC/Ntuples-MC-Pythia8-Flat15to7000-25ns-CUETM1-13TeV.root"
             };
@@ -62,14 +63,11 @@
 
 
 	for (auto name : fileNames) {
-
 		chain_ak4->Add(name.c_str());
 		chain_ak7->Add(name.c_str());
 	}
-	assert(chain_ak4);
 
 	// Retrieve trigger names
-	// TODO: Do for each file separately, not here !!
 	TFile *f = TFile::Open(fileNames[0].c_str());
 	TDirectory *dir = (TDirectory*)f->Get("ak4");
 	TH1F* trgNames;

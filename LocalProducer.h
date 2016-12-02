@@ -202,8 +202,6 @@ public :
    virtual Bool_t   Notify();
    virtual void     Show(Long64_t entry = -1);
 
-   std::vector<std::string> _pfTriggers = {};
-
 private:
 
    FactorizedJetCorrector *_JEC;
@@ -236,16 +234,13 @@ Int_t LocalProducer::GetEntry(Long64_t entry)
 Long64_t LocalProducer::LoadTree(Long64_t entry)
 {
 // Set the environment to read one entry
-   if (!fChain_ak4) 
-      return -5;
+   if (!fChain_ak4) return -5;
    Long64_t centry = fChain_ak4->LoadTree(entry);
 
-   if (centry < 0) 
-      return centry;
-
+   if (centry < 0) return centry;
    if (fChain_ak4->GetTreeNumber() != fCurrent) {
       fCurrent = fChain_ak4->GetTreeNumber();
-      
+      Notify();
    }
    return centry;
 }
