@@ -311,7 +311,7 @@ void LocalProducer::Loop()
 
 
 
-  std::cout << "Mapping AK7 events to AK4 events for data" << std::endl;
+  //std::cout << "Mapping AK7 events to AK4 events for data" << std::endl;
   map<Int_t, map<Int_t, map<UInt_t, Long64_t> > > ak7entry;
 
   /*
@@ -337,10 +337,7 @@ void LocalProducer::Loop()
 
   // DEBUG:
   // Change number of events here
-  nentries = 20;
-
-  // Convert set into vector
-  std::vector<std::string> trg_vec;
+  nentries = 1000000;
 
   // Process triggers
   // Shorten the name of PF triggers
@@ -615,7 +612,7 @@ void LocalProducer::Loop()
             trgfired.push_back(strg);
             prescales.push_back(prsc);
 
-            std::cout << prsc << std::endl;
+            //std::cout << prsc << std::endl;
           }
           else {
             std::cout << "Error for trigger " << strg << " prescales: "
