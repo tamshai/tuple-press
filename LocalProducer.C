@@ -143,16 +143,14 @@ void LocalProducer::Loop()
 
   // Triggers
   //std::vector<std::string> triggernames;
-  std::vector<std::string> trgfired;
+  //std::vector<std::string> trgfired;
   //char triggernames[64][kMaxNtrg];
-  std::vector<int> presc;
-  std::vector<std::string> allTrg;
-
-  /*
-  std::vector<UShort_t> trgfired ---> list indices of triggers that fired 
-  std::vector<UShort_t> presc --->  list of prescales corresponding to the triggers above
-  + list of trigger names written to root of the file (HOW)
-  */
+  //std::vector<int> presc;
+  
+  // Bits and pieces
+  std::vector<UShort_t> trgfired; // list indices of triggers that fired 
+  std::vector<UShort_t> presc; //  list of prescales corresponding to the triggers given in trgfired
+  
 
   Float_t met;
   Float_t sumet;
@@ -218,7 +216,6 @@ void LocalProducer::Loop()
   TBranch *b_trgfired     = tree->Branch("trgfired", &trgfired);
   TBranch *b_presc    = tree->Branch("presc", &presc);
 
-  TBranch *b_allTrg    = tree->Branch("allTrg", &allTrg);
 
   TBranch *b_met      = tree->Branch("met", &met, "met/F");
   TBranch *b_sumet    = tree->Branch("sumet", &sumet, "sumet/F");
@@ -294,10 +291,10 @@ void LocalProducer::Loop()
 
   // Process triggers (taken from fillHistos.C)
   // Shorten the name of PF triggers
+  TH1F *histo = new TH1F("TriggerNames","TriggerNames",1,0,1);
   if (!isMC) {    
 
     // Write trigger names to output
-    TH1F *histo = new TH1F("TriggerNames","TriggerNames",1,0,1);
     histo->SetCanExtend(TH1::kXaxis); 
 
     // Trigger names
@@ -307,15 +304,13 @@ void LocalProducer::Loop()
     for (int i = trgAxis->GetFirst(); i != trgAxis->GetLast(); ++i) {
 
       std::string trgName = trgAxis->GetBinLabel(i);
-      _pfTriggers.push_back( trgName );
-      histo->Fill( trgName.c_str(), 1);
-
-      //create a 1-d dynamic array of myclass objects
-      //write all these objects as one single key to to the file
-      //std::cout << shortTrig << std::endl;
+      if (trgName != "") {
+            _pfTriggers.push_back( trgName );
+            histo->Fill( trgName.c_str(), 1);
+      }
     }
-
-    histo->Write();
+    std::cout << _pfTriggers.size() << std::endl;
+    // histo->Write(); Not here, need to change directory first!
 
   }
 
@@ -496,24 +491,22 @@ void LocalProducer::Loop()
       }
     }
 
-    // Save trigger bits for data
-    // Partially taken from fillHistos.C
+    // Save sparse representation of trigger bits
+    // Partially from fillHistos.C
     if (!isMC) {
 
       trgfired.clear();
       presc.clear();
-      allTrg.clear();
       for (unsigned int itrg = 0; itrg != _pfTriggers.size(); ++itrg ) {
         
         std::string strg = _pfTriggers[itrg];
-        allTrg.push_back(strg);
 
         bool pass = ( TriggerDecision_[itrg] == 1 ) && ( strg != "" ); // -1, 0 or 1
         
         if (pass) {
           int prsc  = HLTPrescale_[itrg]*L1Prescale_[itrg];
           if (prsc > 0) {
-            trgfired.push_back(strg);
+            trgfired.push_back(itrg);
             presc.push_back(prsc);
           }
           else {
@@ -534,6 +527,7 @@ void LocalProducer::Loop()
   }
 
   fout->cd();
+  histo->Write();
   tree->Print();
   tree->Write();
   fout->Close();

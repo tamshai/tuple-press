@@ -93,7 +93,6 @@
 	assert(chain_ak4);
 
 	// Retrieve trigger names
-	// TODO: Do for each file separately, not here !!
 	TFile *f = TFile::Open(fileNames[0].c_str());
 	TDirectory *dir = (TDirectory*)f->Get("ak4");
 	TH1F* trgNames;
