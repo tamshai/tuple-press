@@ -1,5 +1,5 @@
-#define LocalProducer_cxx
-#include "LocalProducer.h"
+#define NanoProducer_cxx
+#include "NanoProducer.h"
 #include <TH1.h>
 #include <TStyle.h>
 #include <TCanvas.h>
@@ -40,11 +40,11 @@ inline Int_t mapUCharToInt(UChar_t cmult) {
 
 
 
-void LocalProducer::Loop()
+void NanoProducer::Loop()
 {
 //   In a ROOT session, you can do:
-//      root> .L LocalProducer.C
-//      root> LocalProducer t
+//      root> .L NanoProducer.C
+//      root> NanoProducer t
 //      root> t.GetEntry(12); // Fill t data members with entry number 12
 //      root> t.Show();       // Show values of entry 12
 //      root> t.Show(16);     // Read and show values of entry 16
@@ -67,28 +67,35 @@ void LocalProducer::Loop()
 //by  b_branchname->GetEntry(ientry); //read only this branch
 
 
-  assert(fChain_ak4);
+  assert(fChain);
 
   // Save input directory
   TDirectory *currDir = gDirectory;
 
-  std::string outName = ( isMC ? "./FlatTuple_MC.root" : "./FlatTuple_DATA.root");
+  std::string outName = ( isMC ? "./NanoTuple_MC.root" : "./NanoTuple_DATA.root");
   TFile *fout = new TFile(outName.c_str(), "RECREATE");
 
   std::cout << "Output will be saved in file: " << outName << std::endl;
 
   // Create new tuple/tree into output file
-  TTree *tree = new TTree("FlatTree", "FlatTree");
+  TTree *tree = new TTree("NanoTree", "NanoTree");
 
   // Change back to input directory
   currDir->cd();
 
 
+  // Event 
+  //mEvent = new NanoQCD();
+  //tree->Branch("mEvent", "NanoQCD", &mEvent);
+
+  
   // Constants
   const Int_t kMaxNjet = 64;
+  const Int_t kMaxNtrg = 64;
 
   // Number of leading jets for which composition variables are saved
   const Int_t kMaxNComp = 3;
+
 
   // PF AK5 jets
   UChar_t njet;
@@ -100,6 +107,7 @@ void LocalProducer::Loop()
   Float_t area[kMaxNjet];
   Float_t jec[kMaxNjet];
   Int_t igen[kMaxNjet];
+
 
   // Jet composition
   UChar_t ncomp;
@@ -123,8 +131,8 @@ void LocalProducer::Loop()
   UChar_t qgl[kMaxNComp];
 
   UChar_t csv[kMaxNComp];
-  UChar_t pfl[kMaxNComp];
-  UChar_t hfl[kMaxNComp];
+  Char_t pfl[kMaxNComp];
+  Char_t hfl[kMaxNComp];
 
 
   // Generated jets
@@ -134,36 +142,36 @@ void LocalProducer::Loop()
   Float_t gen_phi[kMaxNjet];
   Float_t gen_E[kMaxNjet];
 
-
+  
   // Event identification
+  //ULong64_t event;
+  /*
   UInt_t run;
-  UInt_t ls;
-  ULong64_t event;
-  UInt_t bunch;
+  UInt_t lumi;
 
   // Triggers
+  UInt_t ntrg;
   //std::vector<std::string> triggernames;
   std::vector<std::string> trgfired;
   //char triggernames[64][kMaxNtrg];
-  std::vector<int> presc;
-  std::vector<std::string> allTrg;
+  std::vector<int> prescales;
 
-  /*
-  std::vector<UShort_t> trgfired ---> list indices of triggers that fired 
-  std::vector<UShort_t> presc --->  list of prescales corresponding to the triggers above
-  + list of trigger names written to root of the file (HOW)
-  */
-
+  // MET, SuMET, rho, eventfilter
   Float_t met;
   Float_t sumet;
   Float_t rho;
 
+  // MC variables
   Float_t pthat;
-  Float_t weight;
+  Float_t mcweight;
+
+  */
+
+
 
 
   // Branches
-
+  /*
   TBranch *b_njet = tree->Branch("njet", &njet, "njet/b");
   TBranch *b_pt = tree->Branch("pt", pt, "pt[njet]/F");
   TBranch *b_eta = tree->Branch("eta", eta, "eta[njet]/F");
@@ -172,7 +180,7 @@ void LocalProducer::Loop()
   TBranch *b_tightID = tree->Branch("tightID", tightID, "tightID[njet]/O");
   TBranch *b_area = tree->Branch("area", area, "area[njet]/F");
   TBranch *b_jec = tree->Branch("jec", jec, "jec[njet]/F");
-
+  
 
   TBranch *b_ncomp = tree->Branch("ncomp", &ncomp, "ncomp/b"); // Between 1 and kMaxNComp
   TBranch *b_chf = tree->Branch("chf", chf, "chf[ncomp]/b");   
@@ -198,10 +206,9 @@ void LocalProducer::Loop()
   TBranch *b_qgl      = tree->Branch("qgl", qgl, "qgl[ncomp]/b");
 
   TBranch *b_csv    = tree->Branch("csv", csv, "csv[ncomp]/b");
-  TBranch *b_pfl    = tree->Branch("pfl", pfl, "pfl[ncomp]/b");
-  TBranch *b_hfl    = tree->Branch("hfl", hfl, "hfl[ncomp]/b");
+  TBranch *b_pfl    = tree->Branch("pfl", pfl, "pfl[ncomp]/B");
+  TBranch *b_hfl    = tree->Branch("hfl", hfl, "hfl[ncomp]/B");
 
-  
   if (isMC) {
     TBranch *b_ngen     = tree->Branch("ngen", &ngen, "ngen/b");
     TBranch *b_gen_pt   = tree->Branch("gen_pt", gen_pt, "gen_pt[ngen]/F");
@@ -211,112 +218,121 @@ void LocalProducer::Loop()
   }
 
   TBranch *b_run      = tree->Branch("run", &run, "run/i");
-  TBranch *b_ls       = tree->Branch("ls", &ls, "ls/i");
+  TBranch *b_lumi     = tree->Branch("lumi", &lumi, "lumi/i");
   TBranch *b_event    = tree->Branch("event", &event, "event/l");
-  TBranch *b_bunch    = tree->Branch("bunch", &bunch, "bunch/i");
 
+  TBranch *b_ntrg         = tree->Branch("ntrg", &ntrg, "ntrg/i");
   TBranch *b_trgfired     = tree->Branch("trgfired", &trgfired);
-  TBranch *b_presc    = tree->Branch("presc", &presc);
-
-  TBranch *b_allTrg    = tree->Branch("allTrg", &allTrg);
+  TBranch *b_prescales    = tree->Branch("prescales", &prescales);
 
   TBranch *b_met      = tree->Branch("met", &met, "met/F");
   TBranch *b_sumet    = tree->Branch("sumet", &sumet, "sumet/F");
   TBranch *b_rho      = tree->Branch("rho", &rho, "rho/F");
   TBranch *b_pthat    = tree->Branch("pthat", &pthat, "pthat/F");
-  TBranch *b_weight = tree->Branch("weight", &weight, "weight/F");
+  TBranch *b_mcweight = tree->Branch("mcweight", &mcweight, "mcweight/F");
   
+  */
 
-  assert(fChain_ak4 && "AK4 tree invalid!" );
+
+
+
+  assert(fChain && "AK4 tree invalid!" );
   
-  fChain_ak4->SetBranchStatus("*",0);  // disable all branches
+  fChain->SetBranchStatus("*",0);  // disable all branches
+
+
+
+/*
 
 
   // Enable the remaining variables
-  fChain_ak4->SetBranchStatus("PFJetsCHS_",1); // njet
-  fChain_ak4->SetBranchStatus("PFJetsCHS_.P4_.fCoordinates.f*",1); // Four-momentum
+  fChain->SetBranchStatus("PFJetsCHS_",1); // njet
+  fChain->SetBranchStatus("PFJetsCHS_.P4_.fCoordinates.f*",1); // Four-momentum
   
-  fChain_ak4->SetBranchStatus("PFJetsCHS_.tightID_",1); // tightID
-  fChain_ak4->SetBranchStatus("PFJetsCHS_.area_",1); // area
-  fChain_ak4->SetBranchStatus("PFJetsCHS_.cor_",1); // jec
+  fChain->SetBranchStatus("PFJetsCHS_.tightID_",1); // tightID
+  fChain->SetBranchStatus("PFJetsCHS_.area_",1); // area
+  fChain->SetBranchStatus("PFJetsCHS_.cor_",1); // jec
   
   // Composition values
-  fChain_ak4->SetBranchStatus("PFJetsCHS_.chf_",1);
-  fChain_ak4->SetBranchStatus("PFJetsCHS_.nhf_",1);
-  fChain_ak4->SetBranchStatus("PFJetsCHS_.nemf_",1);
-  fChain_ak4->SetBranchStatus("PFJetsCHS_.cemf_",1);
-  fChain_ak4->SetBranchStatus("PFJetsCHS_.muf_",1);
-  fChain_ak4->SetBranchStatus("PFJetsCHS_.hf_*",1);
-  fChain_ak4->SetBranchStatus("PFJetsCHS_.chm_",1);
-  fChain_ak4->SetBranchStatus("PFJetsCHS_.nhm_",1);
-  fChain_ak4->SetBranchStatus("PFJetsCHS_.phm_",1);
-  fChain_ak4->SetBranchStatus("PFJetsCHS_.elm_",1);
-  fChain_ak4->SetBranchStatus("PFJetsCHS_.mum_",1);
-  fChain_ak4->SetBranchStatus("PFJetsCHS_.QGtagger_",1);
-  fChain_ak4->SetBranchStatus("PFJetsCHS_.beta_",1);
-  fChain_ak4->SetBranchStatus("PFJetsCHS_.betaStar_",1);
-  fChain_ak4->SetBranchStatus("PFJetsCHS_.hof_",1);
+  fChain->SetBranchStatus("PFJetsCHS_.chf_",1);
+  fChain->SetBranchStatus("PFJetsCHS_.nhf_",1);
+  fChain->SetBranchStatus("PFJetsCHS_.nemf_",1);
+  fChain->SetBranchStatus("PFJetsCHS_.cemf_",1);
+  fChain->SetBranchStatus("PFJetsCHS_.muf_",1);
+  fChain->SetBranchStatus("PFJetsCHS_.hf_*",1);
+  fChain->SetBranchStatus("PFJetsCHS_.chm_",1);
+  fChain->SetBranchStatus("PFJetsCHS_.nhm_",1);
+  fChain->SetBranchStatus("PFJetsCHS_.phm_",1);
+  fChain->SetBranchStatus("PFJetsCHS_.elm_",1);
+  fChain->SetBranchStatus("PFJetsCHS_.mum_",1);
+  fChain->SetBranchStatus("PFJetsCHS_.QGtagger_",1);
+  fChain->SetBranchStatus("PFJetsCHS_.beta_",1);
+  fChain->SetBranchStatus("PFJetsCHS_.betaStar_",1);
+  fChain->SetBranchStatus("PFJetsCHS_.hof_",1);
 
-  fChain_ak4->SetBranchStatus("PFJetsCHS_.CSV_", 1);
-  fChain_ak4->SetBranchStatus("PFJetsCHS_.partonFlavour_", 1);
-  fChain_ak4->SetBranchStatus("PFJetsCHS_.hadronFlavour_", 1);
+  fChain->SetBranchStatus("PFJetsCHS_.CSV_", 1);
+  fChain->SetBranchStatus("PFJetsCHS_.partonFlavour_", 1);
+  fChain->SetBranchStatus("PFJetsCHS_.hadronFlavour_", 1);
   
   if (isMC) { // MC
-    fChain_ak4->SetBranchStatus("GenJets_",1); // ngen
-    fChain_ak4->SetBranchStatus("GenJets_.fCoordinates.f*",1);
+    fChain->SetBranchStatus("GenJets_",1); // ngen
+    fChain->SetBranchStatus("GenJets_.fCoordinates.f*",1);
   }
   
-  fChain_ak4->SetBranchStatus("TriggerDecision_",1);
-  fChain_ak4->SetBranchStatus("L1Prescale_",1);
-  fChain_ak4->SetBranchStatus("HLTPrescale_",1);
+  fChain->SetBranchStatus("TriggerDecision_",1);
+  fChain->SetBranchStatus("L1Prescale_",1);
+  fChain->SetBranchStatus("HLTPrescale_",1);
 
-  fChain_ak4->SetBranchStatus("EvtHdr_.mRun",1); // run
-  fChain_ak4->SetBranchStatus("EvtHdr_.mLumi",1); // lumi
-  fChain_ak4->SetBranchStatus("EvtHdr_.mEvent",1); // event
-  fChain_ak4->SetBranchStatus("EvtHdr_.mBunch",1); // even
-  fChain_ak4->SetBranchStatus("PFMet_.et_",1); // met
-  fChain_ak4->SetBranchStatus("PFMet_.sumEt_",1); // sumet
-  fChain_ak4->SetBranchStatus("EvtHdr_.mPFRho",1); // rho
-  fChain_ak4->SetBranchStatus("EvtHdr_.mPthat",1); // pthat
-  fChain_ak4->SetBranchStatus("EvtHdr_.mWeight",1); // weight
+  fChain->SetBranchStatus("EvtHdr_.mRun",1); // run
+  fChain->SetBranchStatus("EvtHdr_.mLumi",1); // lumi
+  fChain->SetBranchStatus("EvtHdr_.mEvent",1); // event
+
+  fChain->SetBranchStatus("PFMet_.et_",1); // met
+  fChain->SetBranchStatus("PFMet_.sumEt_",1); // sumet
+  fChain->SetBranchStatus("EvtHdr_.mPFRho",1); // rho
+  fChain->SetBranchStatus("EvtHdr_.mPthat",1); // pthat
+  fChain->SetBranchStatus("EvtHdr_.mWeight",1); // mcweight
+
+*/
+  
+
 
 
   // Helper variables
   TLorentzVector p4, p4_ak4, p4gen;
   
   // Total number of events
-  Long64_t nentries = fChain_ak4->GetEntries(); 
+  Long64_t nentries = fChain->GetEntries(); 
   std::cout << "Total entries: " << nentries << std::endl;
 
   // DEBUG:
   // Change number of events here
-  nentries = 1000000;
-
-  // Process triggers (taken from fillHistos.C)
+  //nentries = 1000000;
+/*
+  // Process triggers
   // Shorten the name of PF triggers
   if (!isMC) {    
 
-    // Write trigger names to output
-    TH1F *histo = new TH1F("TriggerNames","TriggerNames",1,0,1);
-    histo->SetCanExtend(TH1::kXaxis); 
-
     // Trigger names
     assert(TriggerNames);
+
     auto trgAxis = TriggerNames->GetXaxis();
 
     for (int i = trgAxis->GetFirst(); i != trgAxis->GetLast(); ++i) {
 
+      std::regex pfstr("HLT_PFJet([0-9]+)_v[0-9]+");
+      std::string shortTrig;
+
       std::string trgName = trgAxis->GetBinLabel(i);
-      _pfTriggers.push_back( trgName );
-      histo->Fill( trgName.c_str(), 1);
+      if (trgName.size() == 0) 
+        continue;
+      else if (std::regex_match(trgName, pfstr)) 
+        shortTrig = std::regex_replace(trgName, pfstr, "jt$1", std::regex_constants::format_no_copy);
+      else
+        shortTrig = "";
 
-      //create a 1-d dynamic array of myclass objects
-      //write all these objects as one single key to to the file
-      //std::cout << shortTrig << std::endl;
+      _pfTriggers.push_back(shortTrig);
     }
-
-    histo->Write();
-
   }
 
 
@@ -352,7 +368,7 @@ void LocalProducer::Loop()
     _JEC = new FactorizedJetCorrector(vpar);
 
   } // JEC redone
-
+*/
 
   // Iterating over the events
   for (Long64_t jentry = 0; jentry != nentries; ++jentry) {
@@ -360,22 +376,38 @@ void LocalProducer::Loop()
     Long64_t ientry = LoadTree(jentry);
     if (ientry < 0) break;
 
-    fChain_ak4->GetEntry(jentry);
-
-    if(!(jentry % 100000))  {
-      std::cout << jentry << " done out of " << nentries << std::endl;
+    if(!(jentry % 100000)) {
+      std::cout << jentry << " events out of " << nentries << std::endl;
     }
 
+    fChain->GetEntry(jentry);
+    //std::cout << EvtHdr__mEvent << std::endl;
+
+    mEvent->setEvent(EvtHdr__mEvent);
+    mEvent->setRun(EvtHdr__mRun);
+    mEvent->setLS(EvtHdr__mLumi);
+
+    mEvent->setMET(PFMet__et_);
+    mEvent->setSumEt(PFMet__sumEt_);
+    mEvent->setRho(EvtHdr__mPFRho);
+
+    // Save event into file
+    tree->Fill();
+
+  }
+
+/*
     // Event identification
     run = EvtHdr__mRun;
     event = EvtHdr__mEvent;
-    ls = EvtHdr__mLumi;
-    bunch = EvtHdr__mBunch;
+    lumi = EvtHdr__mLumi;
 
     // MET, SuMET, rho
     met = PFMet__et_;
     sumet = PFMet__sumEt_;
     rho = EvtHdr__mPFRho;
+
+*/
 
 
     // Sort jets wrt. pT ??
@@ -384,6 +416,8 @@ void LocalProducer::Loop()
 
     */
 
+
+/*
     // Number of leading jets for which composition variables are saved
     ncomp = min(kMaxNComp, PFJetsCHS__);
 
@@ -399,9 +433,10 @@ void LocalProducer::Loop()
       Float_t cur_area = PFJetsCHS__area_[i];
       Float_t cur_jec = PFJetsCHS__cor_[i]; 
 
+
+
       // Update JEC from text file
       if (true) {
-
         _JEC->setRho(rho);
         _JEC->setJetA(cur_area);
         _JEC->setJetPt(p4.Pt());
@@ -464,8 +499,8 @@ void LocalProducer::Loop()
 
           csv[i_out] = mapFloatToUChar(PFJetsCHS__CSV_[i]);
  
-          hfl[i_out] = mapIntToUChar(PFJetsCHS__hadronFlavour_[i]+128);
-          pfl[i_out] = mapIntToUChar(PFJetsCHS__partonFlavour_[i]+128);
+          hfl[i_out] = mapIntToChar(PFJetsCHS__hadronFlavour_[i]);
+          pfl[i_out] = mapIntToChar(PFJetsCHS__partonFlavour_[i]);
     
         }
 
@@ -476,13 +511,16 @@ void LocalProducer::Loop()
 
     // Ugly hack to save the number of jets saved
     njet = mapIntToUChar(i_out); 
+*/
 
+
+/*
     // MC truth jets
     if (isMC) {
 
       ngen = mapIntToUChar(GenJets__);
       pthat = EvtHdr__mPthat;
-      weight = EvtHdr__mWeight;
+      mcweight = EvtHdr__mWeight;
 
       for (UChar_t i = 0; i != ngen; ++i) {
         p4gen.SetPxPyPzE(   GenJets__fCoordinates_fX[i], GenJets__fCoordinates_fY[i],
@@ -495,26 +533,26 @@ void LocalProducer::Loop()
 
       }
     }
+    
 
     // Save trigger bits for data
-    // Partially taken from fillHistos.C
+    // Partially ripped from fillHistos.C
     if (!isMC) {
 
       trgfired.clear();
-      presc.clear();
-      allTrg.clear();
+      prescales.clear();
       for (unsigned int itrg = 0; itrg != _pfTriggers.size(); ++itrg ) {
         
         std::string strg = _pfTriggers[itrg];
-        allTrg.push_back(strg);
-
         bool pass = ( TriggerDecision_[itrg] == 1 ) && ( strg != "" ); // -1, 0 or 1
         
         if (pass) {
           int prsc  = HLTPrescale_[itrg]*L1Prescale_[itrg];
           if (prsc > 0) {
             trgfired.push_back(strg);
-            presc.push_back(prsc);
+            prescales.push_back(prsc);
+
+            //std::cout << prsc << std::endl;
           }
           else {
             std::cout << "Error for trigger " << strg << " prescales: "
@@ -523,15 +561,10 @@ void LocalProducer::Loop()
           }
         }
       }
-
-
     }
 
+*/
 
-    // Save event into file
-    tree->Fill();
-
-  }
 
   fout->cd();
   tree->Print();

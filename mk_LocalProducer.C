@@ -6,7 +6,7 @@
 	// Make this global variable?? 
 	// (Otherwise has to be defined again in the actual ROOT script)
 	const TString JECpath( "/afs/cern.ch/user/m/mhaapale/work/public/TuplePress/CondFormats/JetMETObjects" );
-	
+
 
 	// Include path to local JEC libraries 
 	gInterpreter->AddIncludePath(JECpath);
@@ -31,9 +31,8 @@
 	// Name of the tree
 	const std::string treeName = "ProcessedTree";
 
-	// AK4 and AK7 trees
+	// AK4  trees
 	TChain *chain_ak4 = new TChain(("ak4/" + treeName).c_str());
-	TChain *chain_ak7 = new TChain(("ak7/" + treeName).c_str());
 
 	// Here are the input files!
 	std::vector<std::string> fileNames;
@@ -42,10 +41,36 @@
 
 		std::vector<std::string> names =
 			{
+/*
+
+				"root://eoscms.cern.ch//store/group/phys_smp/Multijet/13TeV/Data/2016/Ntuples-Data-2016RunB-ReReco-80Xpart1.root",
+				"root://eoscms.cern.ch//store/group/phys_smp/Multijet/13TeV/Data/2016/Ntuples-Data-2016RunB-ReReco-80Xpart2.root",
+				"root://eoscms.cern.ch//store/group/phys_smp/Multijet/13TeV/Data/2016/Ntuples-Data-2016RunB-ReReco-80Xpart3.root",
+				"root://eoscms.cern.ch//store/group/phys_smp/Multijet/13TeV/Data/2016/Ntuples-Data-2016RunB-ReReco-80Xpart4.root",
+				"root://eoscms.cern.ch//store/group/phys_smp/Multijet/13TeV/Data/2016/Ntuples-Data-2016RunB-ReReco-80Xpart5.root"
+				"root://eoscms.cern.ch//store/group/phys_smp/Multijet/13TeV/Data/2016/Ntuples-Data-2016RunC-ReReco-80Xpart1.root",
+				"root://eoscms.cern.ch//store/group/phys_smp/Multijet/13TeV/Data/2016/Ntuples-Data-2016RunC-ReReco-80Xpart2.root"
+
+				"root://eoscms.cern.ch//store/group/phys_smp/Multijet/13TeV/Data/2016/Ntuples-Data-2016RunD-ReReco-80Xpart1.root",
+				"root://eoscms.cern.ch//store/group/phys_smp/Multijet/13TeV/Data/2016/Ntuples-Data-2016RunD-ReReco-80Xpart2.root",
+				"root://eoscms.cern.ch//store/group/phys_smp/Multijet/13TeV/Data/2016/Ntuples-Data-2016RunD-ReReco-80Xpart3.root"
+
+				"root://eoscms.cern.ch//store/group/phys_smp/Multijet/13TeV/Data/2016/Ntuples-Data-2016-RunE-part1.root",
+				"root://eoscms.cern.ch//store/group/phys_smp/Multijet/13TeV/Data/2016/Ntuples-Data-2016-RunE-part2.root",
+				"root://eoscms.cern.ch//store/group/phys_smp/Multijet/13TeV/Data/2016/Ntuples-Data-2016-RunE-part3.root"
+
+
+				"root://eoscms.cern.ch//store/group/phys_smp/Multijet/13TeV/Data/2016/Ntuples-Data-2016RunF-PromptReco-80Xpart1.root",
+				"root://eoscms.cern.ch//store/group/phys_smp/Multijet/13TeV/Data/2016/Ntuples-Data-2016RunF-PromptReco-80Xpart2.root"
+
+*/
+
 				"root://eoscms.cern.ch//store/group/phys_smp/Multijet/13TeV/Data/2016/Ntuples-Data-2016RunG-PromptReco-80Xpart1.root",
               	"root://eoscms.cern.ch//store/group/phys_smp/Multijet/13TeV/Data/2016/Ntuples-Data-2016RunG-PromptReco-80Xpart2.root",
                	"root://eoscms.cern.ch//store/group/phys_smp/Multijet/13TeV/Data/2016/Ntuples-Data-2016RunG-PromptReco-80Xpart3.root",
                	"root://eoscms.cern.ch//store/group/phys_smp/Multijet/13TeV/Data/2016/Ntuples-Data-2016RunG-PromptReco-80Xpart4.root"
+
+
             };
 
 	    fileNames = names;
@@ -64,7 +89,6 @@
 	for (auto name : fileNames) {
 
 		chain_ak4->Add(name.c_str());
-		chain_ak7->Add(name.c_str());
 	}
 	assert(chain_ak4);
 
@@ -76,6 +100,6 @@
 	dir->GetObject("TriggerNames", trgNames);    
 
 	// Process the trees
-	LocalProducer(chain_ak4, chain_ak7, trgNames, isMC);
+	LocalProducer(chain_ak4, trgNames, isMC);
 
 }
